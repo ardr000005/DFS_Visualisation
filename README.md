@@ -56,10 +56,6 @@ Ensure you have the following installed (automatically installed via `requiremen
 3. **Run DFS**: Choose a starting node and execute DFS step by step.
 4. **Reset/Restart**: Reset DFS progress or clear the graph.
 
-## 💡 Contributing
-
-Contributions are welcome! Feel free to open issues or create pull requests.
-
 ## 📜 License
 
 This project is licensed under the **MIT License**.
