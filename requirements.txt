@@ -1,2 +1,13 @@
-networkx
-matplotlib
+streamlit==1.44.0
+networkx==3.4.2
+matplotlib==3.10.1
+streamlit-agraph
+contourpy==1.3.1
+cycler==0.12.1
+fonttools==4.56.0
+kiwisolver==1.4.8
+pyparsing==3.2.3
+rich>=10.14.0
+markdown-it-py>=2.2.0
+pygments<3.0.0,>=2.13.0
+mdurl~=0.1
