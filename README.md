@@ -13,10 +13,6 @@ A **Streamlit** web application for **Depth First Search (DFS)** visualization w
 - **Graph Statistics**: Displays node count, edge count, and connected components.
 - **Reset & Clear Options**: Start fresh anytime.
 
-## 📸 Demo
-
-![DFS Visualizer Demo](https://via.placeholder.com/800x400?text=DFS+Visualizer+Demo)
-
 ## 🛠 Installation
 
 1. Clone the repository:
