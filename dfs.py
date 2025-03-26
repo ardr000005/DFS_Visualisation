@@ -1,6 +1,5 @@
 import streamlit as st
 import networkx as nx
-import matplotlib.pyplot as plt
 from streamlit_agraph import agraph, Node, Edge, Config
 
 # Initialize session state
@@ -21,6 +20,8 @@ def initialize_state():
         st.session_state.dfs_result = []
     if "node_colors" not in st.session_state:
         st.session_state.node_colors = {}
+    if "node_text_colors" not in st.session_state:
+        st.session_state.node_text_colors = {}
 
 initialize_state()
 
@@ -49,8 +50,22 @@ st.markdown("""
         padding: 2px 4px;
         border-radius: 3px;
     }
+    body {
+        color: #333333;
+        background-color: #f5f5f5;
+    }
 </style>
 """, unsafe_allow_html=True)
+
+# Color scheme
+COLOR_SCHEME = {
+    "default": {"fill": "#4682B4", "text": "white"},       # Steel Blue
+    "start": {"fill": "#FF6347", "text": "white"},         # Tomato
+    "visited": {"fill": "#32CD32", "text": "white"},       # Lime Green
+    "stack": {"fill": "#FFD700", "text": "black"},         # Gold
+    "current": {"fill": "#9370DB", "text": "white"},       # Medium Purple
+    "edge": "#808080"                                      # Gray
+}
 
 # Sidebar for graph controls
 with st.sidebar:
@@ -62,7 +77,8 @@ with st.sidebar:
         if st.button("Add Node"):
             if new_node and new_node not in st.session_state.graph:
                 st.session_state.graph.add_node(new_node)
-                st.session_state.node_colors[new_node] = "lightblue"
+                st.session_state.node_colors[new_node] = COLOR_SCHEME["default"]["fill"]
+                st.session_state.node_text_colors[new_node] = COLOR_SCHEME["default"]["text"]
                 st.success(f"Node '{new_node}' added!")
             elif new_node in st.session_state.graph:
                 st.error(f"Node '{new_node}' already exists!")
@@ -91,11 +107,15 @@ with st.sidebar:
             st.session_state.dfs_steps = []
             st.session_state.dfs_result = []
             st.session_state.node_colors = {}
+            st.session_state.node_text_colors = {}
             st.success("Graph cleared!")
         
         if st.button("Generate Random Graph", key="random_graph"):
             st.session_state.graph = nx.erdos_renyi_graph(6, 0.3)
-            st.session_state.node_colors = {str(node): "lightblue" for node in st.session_state.graph.nodes}
+            # Convert node labels to strings
+            st.session_state.graph = nx.relabel_nodes(st.session_state.graph, lambda x: str(x))
+            st.session_state.node_colors = {node: COLOR_SCHEME["default"]["fill"] for node in st.session_state.graph.nodes}
+            st.session_state.node_text_colors = {node: COLOR_SCHEME["default"]["text"] for node in st.session_state.graph.nodes}
             st.success("Random graph generated!")
 
 # Main content area
@@ -107,21 +127,22 @@ with col1:
     # Convert to agraph format
     nodes = [
         Node(
-            id=node, 
-            label=node, 
-            color=st.session_state.node_colors.get(node, "lightblue"),
+            id=str(node),
+            label=str(node),
+            color=st.session_state.node_colors.get(node, COLOR_SCHEME["default"]["fill"]),
             size=25,
-            font={"size": 14}
+            font={"size": 14, "color": st.session_state.node_text_colors.get(node, COLOR_SCHEME["default"]["text"])},
+            shape="circle"
         ) 
         for node in st.session_state.graph.nodes
     ]
     
     edges = [
         Edge(
-            source=node1, 
-            target=node2, 
+            source=str(node1),
+            target=str(node2),
             width=2,
-            color="#808080"
+            color=COLOR_SCHEME["edge"]
         ) 
         for node1, node2 in st.session_state.graph.edges
     ]
@@ -134,7 +155,8 @@ with col1:
         highlightColor="#F7A7A6",
         collapsible=False,
         node={'labelProperty': 'label'},
-        link={'highlightColor': '#ff0000'}
+        link={'highlightColor': '#ff0000'},
+        backgroundColor="#f5f5f5"
     )
     
     if nodes:
@@ -163,9 +185,12 @@ with col2:
                 
                 # Reset all node colors
                 for node in st.session_state.graph.nodes:
-                    st.session_state.node_colors[node] = "lightblue"
+                    st.session_state.node_colors[node] = COLOR_SCHEME["default"]["fill"]
+                    st.session_state.node_text_colors[node] = COLOR_SCHEME["default"]["text"]
                 
-                st.session_state.node_colors[start_node] = "#ffcccb"  # Starting color
+                # Color the start node
+                st.session_state.node_colors[start_node] = COLOR_SCHEME["start"]["fill"]
+                st.session_state.node_text_colors[start_node] = COLOR_SCHEME["start"]["text"]
                 st.success(f"DFS started from node '{start_node}'")
         
         with cols[1]:
@@ -176,7 +201,8 @@ with col2:
                 st.session_state.stack = []
                 st.session_state.current_step = 0
                 for node in st.session_state.graph.nodes:
-                    st.session_state.node_colors[node] = "lightblue"
+                    st.session_state.node_colors[node] = COLOR_SCHEME["default"]["fill"]
+                    st.session_state.node_text_colors[node] = COLOR_SCHEME["default"]["text"]
                 st.success("DFS reset!")
         
         # Step through DFS
@@ -187,16 +213,20 @@ with col2:
                     if node not in st.session_state.visited:
                         st.session_state.visited.add(node)
                         st.session_state.dfs_result.append(node)
-                        st.session_state.node_colors[node] = "#90EE90"  # Visited color
+                        
+                        # Mark as visited
+                        st.session_state.node_colors[node] = COLOR_SCHEME["visited"]["fill"]
+                        st.session_state.node_text_colors[node] = COLOR_SCHEME["visited"]["text"]
                         
                         step_desc = f"Visited node: {node}"
                         st.session_state.dfs_steps.append(step_desc)
                         
                         neighbors = sorted(st.session_state.graph.neighbors(node), reverse=True)
                         for neighbor in neighbors:
-                            if neighbor not in st.session_state.visited:
+                            if neighbor not in st.session_state.visited and neighbor not in st.session_state.stack:
                                 st.session_state.stack.append(neighbor)
-                                st.session_state.node_colors[neighbor] = "#ffcccb"  # In stack color
+                                st.session_state.node_colors[neighbor] = COLOR_SCHEME["stack"]["fill"]
+                                st.session_state.node_text_colors[neighbor] = COLOR_SCHEME["stack"]["text"]
                                 st.session_state.dfs_steps.append(f"Added to stack: {neighbor}")
                         
                         st.session_state.current_step += 1
@@ -222,7 +252,7 @@ with col2:
     # Display DFS result
     if st.session_state.dfs_result:
         st.subheader("📜 DFS Traversal Order")
-        st.write(" → ".join(st.session_state.dfs_result))
+        st.write(" → ".join(str(node) for node in st.session_state.dfs_result))
 
 # Graph statistics
 if st.session_state.graph.nodes:
@@ -233,5 +263,5 @@ if st.session_state.graph.nodes:
         cols[2].metric("Components", nx.number_connected_components(st.session_state.graph))
         
         if st.checkbox("Show adjacency list"):
-            st.json({str(node): list(st.session_state.graph.neighbors(node)) 
+            st.json({str(node): [str(n) for n in st.session_state.graph.neighbors(node)] 
                     for node in st.session_state.graph.nodes})
